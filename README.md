@@ -1,50 +1,40 @@
-# Multiple Disease Prediction Webapp
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
-> **Abstract** : The designed web app employs the Streamlit Python library for frontend design and communicates with backend ML models to predict the probability of diseases. Multiple Disease Prediction has many machine learning models used in prediction. We will be able to choose the diseases from the navigation bar or a sidebar for which we want to make a prediction using various input values. These input values will be the symptoms, physical health data, or blood test results. We will first trained our model from historic data, so it can make accurate predictions. It's capable of predicting whether someone has Diabetes, Heart issues, Parkinson's, Liver conditions, Hepatitis, Jaundice, and more based on the provided symptoms, medical history, and results.
+## Getting Started
 
-### Project Members
-1. KHAN MOHAMMED DANISH NISAR AHMED  [ Team Leader ] 
-2. MANJREKAR SOHAM SHRIKANT 
-3. KHAN MUZAFFAR MOHAMMAD SOAIB 
-4. JAMADAR DANISH RASHID 
+First, run the development server:
 
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-### Deployment Steps
-Please follow the below steps to run this project.
-<br>
-1. `pip install -r requirements.txt`<br>
-2. `cd frontend`<br>
-3. `streamlit run multiple_disease_prediction.py`<br><br>
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
 
-### Platform, Libraries and Frameworks used
-1. [Streamlit](https://docs.streamlit.io/library/get-started)
-2. [Python](https://www.python.org)
-3. [Sklearn](https://scikit-learn.org/stable/index.html)
+[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
 
-### Dataset Used
-1. [Diabetes disease dataset](https://www.kaggle.com/datasets/mathchi/diabetes-data-set/data)
-2. [Heart disease dataset](https://www.kaggle.com/datasets/rishidamarla/heart-disease-prediction/data)
-3. [Parkinsons disease dataset](https://www.kaggle.com/code/arunkumarpyramid/detection-parkinson-s-disease/data)
-4. [Liver disease dataset](https://www.kaggle.com/code/harisyammnv/liver-disease-prediction/data)
-5. [Hepatities disease dataset](https://kaggle.com/dataset2)
-6. [Jaundice disease dataset](https://kaggle.com/dataset2)
-   
+The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
 
-### Trailer
-https://github.com/sohammanjrekar/rcoe22-sem5-group2/assets/83022701/b63635ef-3195-4282-9e90-0b05c659fbcc
+This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-<br></br>
+## Learn More
 
-## Research Paper: Multiple Disease Prediction Webapp 
-- **Description:** A study that developed a web application capable of predicting multiple diseases, including diabetes, heart disease, Parkinson's, liver disease, jaundice, and hepatitis, using machine learning algorithms such as SVM, Decision Tree, and Random Forest. The system allows users to input data for a specific disease, and based on the trained model, the output is displayed. The paper also discusses the functional and non-functional requirements of the system, as well as the architecture design and implementation details.
-- [Online JETIR Paper](https://www.jetir.org/view?paper=JETIR2210432)
-- [Letter of Acceptance](https://drive.google.com/file/d/1TFkoafPQJmC3_-XekMwk_HUMa7PA89sq/view?usp=sharing)
-- [Certificate of Each Member](https://drive.google.com/file/d/1FVPssNXveIYHfmhjTETgvED6NeNBucPm/view?usp=sharing)
+To learn more about Next.js, take a look at the following resources:
 
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
 
-### References
-- [1] Priyanka Sonar, Prof. K. Jaya Malini,” DIABETES PREDICTION USING DIFFERENT MACHINE LEARNING APPROACHES”, 2019 IEEE ,3rd International Conference on Computing Methodologies and Communication (ICCMC) 
-- [2] Archana Singh, Rakesh Kumar, “Heart Disease Prediction Using Machine Learning Algorithms”, 2020 IEEE, International Conference on Electrical and Electronics Engineering (ICE3) 
-- [3] A. Sivasangari, Baddigam Jaya Krishna Reddy, Annamareddy Kiran, P. Ajitha,” Diagnosis of Liver Disease using Machine Learning Models” 2020 Fourth International Conference on I-SMAC (IoT in Social, Mobile, Analytics and Cloud) (I-SMAC) 
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
