@@ -1,7 +1,6 @@
 # Hygieia: AI-Powered Medical Disease Prediction Platform
 
 <div align="center">
-  <img src="public/logo.png" alt="Hygieia Logo" width="200" height="200" />
   <h3>Advanced Disease Prediction & Analysis Using AI</h3>
 </div>
 
