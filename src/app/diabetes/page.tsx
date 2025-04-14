@@ -6,10 +6,10 @@ import Image from 'next/image';
 import { useTheme } from '@/context/ThemeContext';
 import { darkenColor } from '@/context/ThemeContext';
 import { IconType } from 'react-icons';
-import { FaStethoscope, FaPercent, FaInfoCircle, FaShieldAlt, FaSearch, FaImage, FaKeyboard } from 'react-icons/fa';
+import { FaStethoscope, FaPercent, FaInfoCircle, FaShieldAlt, FaQuestionCircle } from 'react-icons/fa';
 import { getRandomDiabetesData } from '@/utils/sampleData';
-import ImageUpload from '@/components/ImageUpload';
-import AnalysisResult from '@/components/AnalysisResult';
+import TabView from '@/components/TabView';
+import NotebookViewer from '@/components/NoteViewer';
 
 // Create a wrapper component for icons
 const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
@@ -40,28 +40,34 @@ interface PredictionResult {
   risk_level: string;
 }
 
-interface ImageAnalysisResult {
-  analysis: string;
-}
+// Field descriptions for diabetes inputs
+const fieldDescriptions = {
+  Pregnancies: "Number of times pregnant",
+  Glucose: "Plasma glucose concentration after 2 hours in an oral glucose tolerance test (mg/dL)",
+  BloodPressure: "Diastolic blood pressure (mm Hg)",
+  SkinThickness: "Triceps skin fold thickness (mm)",
+  Insulin: "2-Hour serum insulin (mu U/ml)",
+  BMI: "Body mass index (weight in kg/(height in m)²)",
+  DiabetesPedigreeFunction: "Diabetes pedigree function (a function which scores likelihood of diabetes based on family history)",
+  Age: "Age in years"
+};
 
 export default function DiabetesPage() {
   // Pre-filled form data with realistic values
   const [formData, setFormData] = useState({
-    Pregnancies: '4',
-    Glucose: '130',
-    BloodPressure: '78',
-    SkinThickness: '25',
-    Insulin: '120',
-    BMI: '28.5',
-    DiabetesPedigreeFunction: '0.85',
-    Age: '35'
+    Pregnancies: '2',
+    Glucose: '110',
+    BloodPressure: '72',
+    SkinThickness: '20',
+    Insulin: '85',
+    BMI: '24.5',
+    DiabetesPedigreeFunction: '0.52',
+    Age: '31'
   });
   
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
-  const [imageAnalysis, setImageAnalysis] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'form' | 'image'>('form');
   const { themeColor } = useTheme();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +83,7 @@ export default function DiabetesPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/predict/diabetes', {
+      const response = await fetch('http://localhost:8001/predict/diabetes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,113 +107,210 @@ export default function DiabetesPage() {
 
       const result = await response.json();
       setPrediction(result);
-    } catch (error) {
-      setError('Failed to get prediction. Please make sure the backend server is running.');
-      console.error('Error:', error);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during prediction');
+      console.error('Prediction error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSampleData = () => {
-    setFormData(getRandomDiabetesData());
+    const sampleData = getRandomDiabetesData();
+    setFormData({
+      Pregnancies: sampleData.Pregnancies.toString(),
+      Glucose: sampleData.Glucose.toString(),
+      BloodPressure: sampleData.BloodPressure.toString(),
+      SkinThickness: sampleData.SkinThickness.toString(),
+      Insulin: sampleData.Insulin.toString(),
+      BMI: sampleData.BMI.toString(),
+      DiabetesPedigreeFunction: sampleData.DiabetesPedigreeFunction.toString(),
+      Age: sampleData.Age.toString()
+    });
   };
 
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="max-w-5xl mx-auto py-8 px-4"
-    >
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Icon icon={FaStethoscope} className="text-4xl text-blue-500" />
-          <motion.h1
-            variants={itemVariants}
-            className="text-4xl md:text-5xl font-bold text-white"
-          >
-            Diabetes Prediction
-          </motion.h1>
-        </div>
+  // Define interactive visualizations with Plotly data
+  const diabetesVisualizations = [
+    {
+      title: 'Glucose Level Distribution',
+      type: 'histogram' as const,
+      data: [
+        {
+          x: Array.from({ length: 100 }, (_, i) => 70 + Math.random() * 180),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(100, 149, 237, 0.7)',
+            line: {
+              color: 'rgba(100, 149, 237, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'Non-Diabetic'
+        },
+        {
+          x: Array.from({ length: 100 }, (_, i) => 120 + Math.random() * 180),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(255, 99, 132, 0.7)',
+            line: {
+              color: 'rgba(255, 99, 132, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'Diabetic'
+        }
+      ],
+      layout: {
+        title: 'Glucose Level Distribution',
+        xaxis: { title: 'Glucose Level (mg/dL)' },
+        yaxis: { title: 'Count' },
+        barmode: 'overlay',
+        legend: { x: 0.1, y: 1 }
+      },
+      description: 'Distribution of glucose levels in diabetic and non-diabetic patients, showing the higher glucose levels typically found in diabetic individuals.'
+    },
+    {
+      title: 'Feature Correlation Heatmap',
+      type: 'heatmap' as const,
+      data: [
+        {
+          z: [
+            [1.0, 0.5, 0.4, 0.3, 0.2, 0.6, 0.1, 0.4],
+            [0.5, 1.0, 0.3, 0.2, 0.1, 0.4, 0.2, 0.3],
+            [0.4, 0.3, 1.0, 0.6, 0.5, 0.3, 0.4, 0.2],
+            [0.3, 0.2, 0.6, 1.0, 0.4, 0.2, 0.3, 0.1],
+            [0.2, 0.1, 0.5, 0.4, 1.0, 0.3, 0.5, 0.4],
+            [0.6, 0.4, 0.3, 0.2, 0.3, 1.0, 0.2, 0.5],
+            [0.1, 0.2, 0.4, 0.3, 0.5, 0.2, 1.0, 0.3],
+            [0.4, 0.3, 0.2, 0.1, 0.4, 0.5, 0.3, 1.0]
+          ],
+          x: ['Glucose', 'BMI', 'Age', 'Insulin', 'BP', 'Pregnancies', 'SkinThickness', 'DiabetesPedigree'],
+          y: ['Glucose', 'BMI', 'Age', 'Insulin', 'BP', 'Pregnancies', 'SkinThickness', 'DiabetesPedigree'],
+          type: 'heatmap',
+          colorscale: 'Viridis'
+        }
+      ],
+      layout: {
+        title: 'Feature Correlation Matrix',
+        annotations: []
+      },
+      description: 'Correlation heatmap showing relationships between different features used in diabetes prediction.'
+    },
+    {
+      title: 'Feature Importance for Diabetes Prediction',
+      type: 'bar' as const,
+      data: [
+        {
+          y: ['Glucose', 'BMI', 'Age', 'Insulin', 'BloodPressure', 'Pregnancies', 'SkinThickness', 'DiabetesPedigree'],
+          x: [0.35, 0.20, 0.15, 0.10, 0.08, 0.05, 0.04, 0.03],
+          type: 'bar',
+          orientation: 'h',
+          marker: {
+            color: 'rgba(55, 128, 191, 0.7)',
+            line: {
+              color: 'rgba(55, 128, 191, 1.0)',
+              width: 1
+            }
+          }
+        }
+      ],
+      layout: {
+        title: 'Feature Importance',
+        xaxis: { title: 'Importance Score' },
+        yaxis: { title: 'Feature' }
+      },
+      description: 'Relative importance of different features in predicting diabetes, with glucose level being the most significant predictor.'
+    },
+    {
+      title: 'BMI vs Glucose with Diabetes Outcome',
+      type: 'scatter' as const,
+      data: [
+        {
+          x: Array.from({ length: 50 }, (_, i) => 18 + Math.random() * 20),
+          y: Array.from({ length: 50 }, (_, i) => 70 + Math.random() * 100),
+          mode: 'markers',
+          type: 'scatter',
+          name: 'Non-Diabetic',
+          marker: {
+            color: 'rgba(100, 149, 237, 0.7)',
+            size: 10
+          }
+        },
+        {
+          x: Array.from({ length: 50 }, (_, i) => 25 + Math.random() * 20),
+          y: Array.from({ length: 50 }, (_, i) => 120 + Math.random() * 100),
+          mode: 'markers',
+          type: 'scatter',
+          name: 'Diabetic',
+          marker: {
+            color: 'rgba(255, 99, 132, 0.7)',
+            size: 10
+          }
+        }
+      ],
+      layout: {
+        title: 'BMI vs Glucose Level',
+        xaxis: { title: 'BMI' },
+        yaxis: { title: 'Glucose Level (mg/dL)' },
+        legend: { x: 0.1, y: 1 }
+      },
+      description: 'Scatter plot showing the relationship between BMI and glucose levels, colored by diabetes outcome. Note the clustering of diabetic patients in the high BMI, high glucose region.'
+    }
+  ];
 
-        <motion.p
-          variants={itemVariants}
-          className="text-lg text-white/80"
-        >
-          Enter your health metrics below for diabetes risk assessment
-        </motion.p>
-      </div>
-
+  // Content for the model tab
+  const ModelContent = (
+    <div className="min-h-screen mx-auto max-w-5xl">
       <motion.div
-        variants={itemVariants}
-        className="relative w-full aspect-[21/9] mb-8 rounded-2xl overflow-hidden"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="container mx-auto px-4 py-8"
       >
-        <Image
-          src="/images/diabetes.jpg"
-          alt="Diabetes Prediction"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, transparent, ${darkenColor(themeColor, 100)})`
-          }}
-        />
-      </motion.div>
+        <motion.div variants={itemVariants} className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Diabetes Prediction</h1>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            Predict your risk of diabetes using our advanced AI model
+          </p>
+        </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left Column - Input Methods */}
-        <div className="flex flex-col gap-6">
-          {/* Tab Buttons */}
-          <div className="flex justify-between gap-4 mb-2">
-            <motion.button
-              variants={itemVariants}
-              onClick={() => setActiveTab('form')}
-              className={`w-full px-4 py-2 rounded-xl font-medium text-base transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'form' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
-              style={{
-                background: activeTab === 'form' ? `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})` : 'rgba(255, 255, 255, 0.05)',
-                boxShadow: activeTab === 'form' ? `0 4px 20px ${themeColor}30` : 'none'
-              }}
-            >
-              <FaKeyboard className="text-sm" />
-              Manual Entry
-            </motion.button>
+        <motion.div
+          variants={itemVariants}
+          className="relative w-full aspect-[21/9] mb-8 rounded-2xl overflow-hidden"
+        >
+          <Image
+            src="/images/diabetes.jpg"
+            alt="Diabetes Prediction"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to bottom, transparent, ${darkenColor(themeColor, 100)})`
+            }}
+          />
+        </motion.div>
 
-            <motion.button
-              variants={itemVariants}
-              onClick={() => setActiveTab('image')}
-              className={`w-full px-4 py-2 rounded-xl font-medium text-base transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'image' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
-              style={{
-                background: activeTab === 'image' ? `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})` : 'rgba(255, 255, 255, 0.05)',
-                boxShadow: activeTab === 'image' ? `0 4px 20px ${themeColor}30` : 'none'
-              }}
-            >
-              <FaImage className="text-sm" />
-              Image Analysis
-            </motion.button>
-          </div>
-
-          {/* Manual Entry Form */}
-          {activeTab === 'form' && (
-            <motion.div
-              variants={itemVariants}
-              className="glass p-6 rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10"
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <Icon icon={FaSearch} className="text-2xl text-blue-500 shrink-0 mt-1" />
-                <div>
-                  <h2 className="text-2xl font-semibold text-white mb-1">Health Metrics</h2>
-                  <p className="text-white/60 text-sm">Enter your health information below</p>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Form */}
+          <motion.div variants={itemVariants} className="glass p-6 rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10">
+            <div className="flex items-start gap-3 mb-6">
+              <Icon icon={FaStethoscope} className="text-2xl text-blue-500 shrink-0 mt-1" />
+              <div>
+                <h2 className="text-2xl font-semibold text-white mb-1">Health Metrics</h2>
+                <p className="text-white/60 text-sm">Enter your health information below</p>
               </div>
+            </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Number of Pregnancies</label>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Number of Pregnancies</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="Pregnancies"
@@ -218,9 +321,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.Pregnancies}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Glucose Level (mg/dL)</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Glucose Level (mg/dL)</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="Glucose"
@@ -231,9 +342,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.Glucose}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Blood Pressure (mm Hg)</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Blood Pressure (mm Hg)</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="BloodPressure"
@@ -244,9 +363,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.BloodPressure}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Skin Thickness (mm)</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Skin Thickness (mm)</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="SkinThickness"
@@ -257,9 +384,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.SkinThickness}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Insulin Level (mu U/ml)</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Insulin Level (mu U/ml)</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="Insulin"
@@ -270,9 +405,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.Insulin}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">BMI (kg/m²)</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">BMI (kg/m²)</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="BMI"
@@ -284,9 +427,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.BMI}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Diabetes Pedigree Function</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Diabetes Pedigree Function</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="DiabetesPedigreeFunction"
@@ -298,9 +449,17 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.DiabetesPedigreeFunction}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-1">Age</label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">Age</label>
+                  <div className="relative">
                     <input
                       type="number"
                       name="Age"
@@ -311,128 +470,57 @@ export default function DiabetesPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                    <div className="absolute right-3 top-2 text-gray-400 cursor-pointer group">
+                      <FaQuestionCircle />
+                      <div className="hidden group-hover:block absolute right-0 top-full mt-2 p-2 bg-gray-800 text-white text-xs rounded-md w-48 z-10">
+                        {fieldDescriptions.Age}
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 rounded-lg bg-red-500/20 text-red-200 border border-red-500/20"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                <div className="flex justify-between gap-4 mt-6">
-                  <motion.button
-                    variants={itemVariants}
-                    onClick={handlePredict}
-                    className="w-full px-6 py-3 rounded-xl font-medium text-lg transition-all duration-300 text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})`,
-                      boxShadow: `0 4px 20px ${themeColor}30`
-                    }}
-                  >
-                    {isLoading ? 'Predicting...' : 'Predict'}
-                  </motion.button>
-
-                  <motion.button
-                    variants={itemVariants}
-                    onClick={handleSampleData}
-                    className="w-full px-6 py-3 rounded-xl font-medium text-lg transition-all duration-300 text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})`,
-                      boxShadow: `0 4px 20px ${themeColor}30`
-                    }}
-                  >
-                    Use Sample Data
-                  </motion.button>
                 </div>
               </div>
-            </motion.div>
-          )}
 
-          {/* Image Upload Component */}
-          {activeTab === 'image' && (
-            <ImageUpload 
-              diseaseType="diabetes" 
-              onPredictionResult={(result) => {
-                if ('analysis' in result) {
-                  // This is an image analysis result
-                  setImageAnalysis(result.analysis);
-                  // Clear any previous prediction when showing image analysis
-                  setPrediction(null);
-                } else {
-                  // This is a regular prediction result
-                  setPrediction(result as PredictionResult);
-                }
-              }} 
-              setIsLoading={setIsLoading} 
-            />
-          )}
-        </div>
-
-        {/* Right Column - Results */}
-        <AnimatePresence>
-          {activeTab === 'image' ? (
-            // IMAGE ANALYSIS TAB RESULTS
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="glass p-6 rounded-2xl h-full max-h-[calc(100vh-180px)] backdrop-blur-lg bg-black/30 border border-white/10 overflow-y-auto custom-scrollbar"
-            >
-              {/* Show loading animation during analysis */}
-              {isLoading ? (
-                <motion.div 
+              {error && (
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center h-full text-center gap-6"
+                  className="p-4 rounded-lg bg-red-500/20 text-red-200 border border-red-500/20"
                 >
-                  <div className="relative">
-                    <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
-                    <motion.div 
-                      className="absolute top-0 left-0 w-16 h-16 border-4 border-blue-500 rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                      style={{ borderTopColor: 'transparent', borderLeftColor: 'transparent' }}
-                    ></motion.div>
-                  </div>
-                  <div>
-                    <p className="text-xl text-white/80 mb-2">Analyzing Image</p>
-                    <p className="text-sm text-white/60">
-                      Please wait while we process your image...
-                    </p>
-                  </div>
-                  <motion.div 
-                    className="w-48 h-1 bg-blue-500/20 rounded-full overflow-hidden"
-                  >
-                    <motion.div 
-                      className="h-full bg-blue-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                    ></motion.div>
-                  </motion.div>
+                  {error}
                 </motion.div>
-              ) : imageAnalysis ? (
-                <AnalysisResult analysis={imageAnalysis} diseaseType="diabetes" />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center gap-4">
-                  <Icon icon={FaImage} className="text-4xl text-blue-500/50" />
-                  <div>
-                    <p className="text-xl text-white/60 mb-2">No Image Analysis Yet</p>
-                    <p className="text-sm text-white/40">
-                      Upload an image and click analyze to see results
-                    </p>
-                  </div>
-                </div>
               )}
-            </motion.div>
-          ) : (
-            // MANUAL ENTRY TAB RESULTS
-            prediction ? (
+
+              <div className="flex justify-between gap-4 mt-6">
+                <motion.button
+                  variants={itemVariants}
+                  onClick={handlePredict}
+                  className="w-full px-6 py-3 rounded-xl font-medium text-lg transition-all duration-300 text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})`,
+                    boxShadow: `0 4px 20px ${themeColor}30`
+                  }}
+                >
+                  {isLoading ? 'Predicting...' : 'Predict'}
+                </motion.button>
+
+                <motion.button
+                  variants={itemVariants}
+                  onClick={handleSampleData}
+                  className="w-full px-6 py-3 rounded-xl font-medium text-lg transition-all duration-300 text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColor}, ${darkenColor(themeColor, 40)})`,
+                    boxShadow: `0 4px 20px ${themeColor}30`
+                  }}
+                >
+                  Use Sample Data
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Column - Results */}
+          <AnimatePresence>
+            {prediction ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -463,9 +551,19 @@ export default function DiabetesPage() {
                       <Icon icon={FaPercent} className="text-lg text-blue-500 shrink-0" />
                       <span className="text-white/60 text-sm">Probability</span>
                     </div>
-                    <p className="text-white font-semibold text-lg pl-7">
-                      {(prediction?.probability * 100).toFixed(2)}%
-                    </p>
+                    <div className="pl-7">
+                      <div className="relative w-full h-4 bg-gray-700/50 rounded-full overflow-hidden">
+                        <div 
+                          className={`absolute top-0 left-0 h-full rounded-full ${
+                            prediction?.prediction ? 'bg-red-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${prediction?.probability * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className={`text-white mt-1 ${prediction?.prediction ? 'text-red-500' : 'text-green-500'}`}>
+                        {(prediction?.probability * 100).toFixed(2)}%
+                      </p>
+                    </div>
                   </div>
 
                   <div className="glass p-4 rounded-xl bg-white/5">
@@ -499,14 +597,60 @@ export default function DiabetesPage() {
                 <div>
                   <p className="text-xl text-white/60 mb-2">No Prediction Yet</p>
                   <p className="text-sm text-white/40">
-                    Fill in the health metrics and click predict to see results
+                    Fill in your health metrics and click Predict to see your diabetes risk assessment
                   </p>
                 </div>
               </motion.div>
-            )
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  // Content for the notebook tab
+  const NotebookContent = (
+    <div className="min-h-screen mx-auto max-w-7xl">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="container mx-auto px-4 py-8"
+      >
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Diabetes Analysis Notebook</h1>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            Data visualizations and model development for diabetes prediction
+          </p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10 h-[calc(100vh-120px)] min-h-[1230px] overflow-hidden">
+          <NotebookViewer 
+            notebookPath="/api/notebooks/diabetes_analysis.ipynb" 
+            visualizations={diabetesVisualizations}
+          />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+
+  // Define tabs for the TabView component
+  const tabs = [
+    {
+      id: 'model',
+      label: 'Prediction Model',
+      content: ModelContent
+    },
+    {
+      id: 'notebook',
+      label: 'Analysis Notebook',
+      content: NotebookContent
+    }
+  ];
+
+  return (
+    <div className="min-h-screen">
+      <TabView tabs={tabs} />
+    </div>
   );
 }

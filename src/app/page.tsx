@@ -8,6 +8,8 @@ import { darkenColor } from '@/context/ThemeContext';
 import Select from 'react-select';
 import { IconType } from 'react-icons';
 import { FaStethoscope, FaPercent, FaInfoCircle, FaShieldAlt, FaSearch, FaQuoteLeft } from 'react-icons/fa';
+import TabView from '@/components/TabView';
+import NotebookViewer from '@/components/NoteViewer';
 
 // Create a wrapper component for icons
 const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
@@ -173,7 +175,7 @@ export default function HomePage() {
     setIsLoading(true);
     try {
       console.log("Sending symptoms:", selectedSymptoms);  
-      const response = await fetch('http://localhost:8000/predict/general', {
+      const response = await fetch('http://localhost:8001/predict/general', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +202,103 @@ export default function HomePage() {
     }
   };
 
-  return (
+  // Define interactive visualizations with Plotly data
+  const diseaseVisualizations = [
+    {
+      title: 'Disease Prevalence by Age Group',
+      type: 'bar' as const,
+      data: [
+        {
+          x: ['18-30', '31-40', '41-50', '51-60', '61-70', '71+'],
+          y: [15, 25, 35, 45, 40, 30],
+          type: 'bar',
+          marker: {
+            color: ['rgba(55, 128, 191, 0.7)', 'rgba(55, 128, 191, 0.7)', 
+                   'rgba(55, 128, 191, 0.7)', 'rgba(219, 64, 82, 0.7)', 
+                   'rgba(219, 64, 82, 0.7)', 'rgba(219, 64, 82, 0.7)']
+          }
+        }
+      ],
+      layout: {
+        title: 'Disease Prevalence by Age Group',
+        xaxis: { title: 'Age Group' },
+        yaxis: { title: 'Prevalence (%)' }
+      },
+      description: 'Distribution of disease prevalence across different age groups, showing increased risk in older populations.'
+    },
+    {
+      title: 'Symptom Correlation Heatmap',
+      type: 'heatmap' as const,
+      data: [
+        {
+          z: [
+            [1.0, 0.8, 0.6, 0.4, 0.2],
+            [0.8, 1.0, 0.7, 0.5, 0.3],
+            [0.6, 0.7, 1.0, 0.8, 0.5],
+            [0.4, 0.5, 0.8, 1.0, 0.7],
+            [0.2, 0.3, 0.5, 0.7, 1.0]
+          ],
+          x: ['Fever', 'Cough', 'Fatigue', 'Headache', 'Nausea'],
+          y: ['Fever', 'Cough', 'Fatigue', 'Headache', 'Nausea'],
+          type: 'heatmap',
+          colorscale: 'Viridis'
+        }
+      ],
+      layout: {
+        title: 'Symptom Correlation Matrix',
+        annotations: []
+      },
+      description: 'Correlation matrix showing relationships between common symptoms, helping identify symptom clusters.'
+    },
+    {
+      title: 'Feature Importance for Disease Prediction',
+      type: 'bar' as const,
+      data: [
+        {
+          y: ['Age', 'BMI', 'Blood Pressure', 'Glucose Level', 'Family History'],
+          x: [0.35, 0.25, 0.20, 0.15, 0.05],
+          type: 'bar',
+          orientation: 'h',
+          marker: {
+            color: 'rgba(55, 128, 191, 0.7)',
+            line: {
+              color: 'rgba(55, 128, 191, 1.0)',
+              width: 1
+            }
+          }
+        }
+      ],
+      layout: {
+        title: 'Feature Importance',
+        xaxis: { title: 'Importance Score' },
+        yaxis: { title: 'Feature' }
+      },
+      description: 'Relative importance of different features in predicting disease risk, based on machine learning model analysis.'
+    },
+    {
+      title: 'Disease Distribution by Type',
+      type: 'pie' as const,
+      data: [
+        {
+          values: [30, 20, 15, 10, 25],
+          labels: ['Cardiovascular', 'Respiratory', 'Gastrointestinal', 'Neurological', 'Other'],
+          type: 'pie',
+          textinfo: 'label+percent',
+          textposition: 'inside',
+          marker: {
+            colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+          }
+        }
+      ],
+      layout: {
+        title: 'Disease Distribution by Type'
+      },
+      description: 'Distribution of different disease categories in the dataset, showing prevalence of each type.'
+    }
+  ];
+
+  // Content for the model tab
+  const ModelContent = (
     <motion.div
       initial="hidden"
       animate="visible"
@@ -234,6 +332,7 @@ export default function HomePage() {
           src="/images/health.gif"
           alt="AI Doctor"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />
@@ -457,5 +556,51 @@ export default function HomePage() {
         </AnimatePresence>
       </div>
     </motion.div>
+  );
+
+  // Content for the notebook tab
+  const NotebookContent = (
+    <div className="min-h-screen mx-auto max-w-7xl">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="container mx-auto px-4 py-8"
+      >
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Disease Prediction Analysis</h1>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            Data visualizations and model development for general disease prediction
+          </p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10 h-[calc(100vh-120px)] min-h-[1200px] overflow-hidden">
+          <NotebookViewer 
+            notebookPath="/api/notebooks/disease_prediction.ipynb" 
+            visualizations={diseaseVisualizations}
+          />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+
+  // Define tabs for the TabView component
+  const tabs = [
+    {
+      id: 'model',
+      label: 'Prediction Model',
+      content: ModelContent
+    },
+    {
+      id: 'notebook',
+      label: 'Analysis Notebook',
+      content: NotebookContent
+    }
+  ];
+
+  return (
+    <div className="min-h-screen">
+      <TabView tabs={tabs} />
+    </div>
   );
 }

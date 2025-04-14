@@ -9,12 +9,14 @@ import Image from 'next/image';
 
 interface ImageUploadProps {
   diseaseType: string;
+  customPrompt?: string;
   onPredictionResult: (result: any) => void;
   setIsLoading: (loading: boolean) => void;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({ 
   diseaseType, 
+  customPrompt,
   onPredictionResult,
   setIsLoading: setParentLoading
 }) => {
@@ -102,7 +104,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData();
       formData.append('file', image);
 
-      const response = await fetch(`http://localhost:8000/image/${diseaseType}`, {
+      // Add custom prompt to the request if provided
+      if (customPrompt) {
+        formData.append('prompt', customPrompt);
+      }
+
+      const response = await fetch(`http://localhost:8001/image/${diseaseType}`, {
         method: 'POST',
         body: formData,
       });
@@ -133,11 +140,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       className="w-full"
     >
       <div className="glass p-6 rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10">
-        <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <FaImage className="text-blue-500" />
-          Image Analysis
-        </h3>
-        
         <div 
           className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
             dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/20 hover:border-white/40'

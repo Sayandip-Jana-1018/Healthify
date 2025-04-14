@@ -1,9 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  // Remove swcMinify as it's deprecated
   images: {
-    domains: ['localhost'],
+    // Replace domains with remotePatterns
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+    // Add unoptimized flag for GIF images
+    unoptimized: true,
   },
 };
 

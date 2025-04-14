@@ -7,6 +7,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { IconType } from 'react-icons';
 import { FaStethoscope, FaHeartbeat, FaShieldAlt, FaLungs, FaDatabase } from 'react-icons/fa';
 import { getRandomLungData } from '@/utils/sampleData';
+import TabView from '@/components/TabView';
+import NotebookViewer from '@/components/NoteViewer';
 
 const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
   return <IconComponent className={className} />;
@@ -61,7 +63,12 @@ export default function LungCancerPage() {
   const { theme } = useTheme();
 
   const handleUseSampleData = () => {
-    setFormData(getRandomLungData());
+    const sampleData = getRandomLungData();
+    const stringifiedData = Object.fromEntries(
+      Object.entries(sampleData).map(([key, value]) => [key, String(value)])
+    );
+    setFormData(stringifiedData as typeof formData);
+    setError(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -75,7 +82,7 @@ export default function LungCancerPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/predict/lung', {
+      const response = await fetch('http://localhost:8001/predict/lung', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,8 +126,125 @@ export default function LungCancerPage() {
     setError(null);
   };
 
-  return (
-    <div className="min-h-screen bg-transparent">
+  // Define interactive visualizations with Plotly data
+  const lungVisualizations = [
+    {
+      title: 'Age Distribution by Lung Cancer Status',
+      type: 'histogram' as const,
+      data: [
+        {
+          x: Array.from({ length: 100 }, (_, i) => 40 + Math.random() * 30),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(100, 149, 237, 0.7)',
+            line: {
+              color: 'rgba(100, 149, 237, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'No Lung Cancer'
+        },
+        {
+          x: Array.from({ length: 100 }, (_, i) => 50 + Math.random() * 30),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(255, 99, 132, 0.7)',
+            line: {
+              color: 'rgba(255, 99, 132, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'Lung Cancer'
+        }
+      ],
+      layout: {
+        title: 'Age Distribution by Lung Cancer Status',
+        xaxis: { title: 'Age' },
+        yaxis: { title: 'Count' },
+        barmode: 'overlay',
+        legend: { x: 0.1, y: 1 }
+      },
+      description: 'Distribution of ages in patients with and without lung cancer, showing higher prevalence in older age groups.'
+    },
+    {
+      title: 'Smoking vs. Lung Cancer Risk',
+      type: 'bar' as const,
+      data: [
+        {
+          x: ['Non-smoker', 'Light Smoker', 'Moderate Smoker', 'Heavy Smoker'],
+          y: [5, 15, 35, 65],
+          type: 'bar',
+          marker: {
+            color: ['rgba(100, 149, 237, 0.7)', 'rgba(150, 180, 200, 0.7)', 
+                   'rgba(255, 180, 100, 0.7)', 'rgba(255, 99, 132, 0.7)']
+          }
+        }
+      ],
+      layout: {
+        title: 'Lung Cancer Risk by Smoking Status',
+        xaxis: { title: 'Smoking Status' },
+        yaxis: { title: 'Lung Cancer Risk (%)' }
+      },
+      description: 'Bar chart showing the relationship between smoking status and lung cancer risk, with heavy smokers having the highest risk.'
+    },
+    {
+      title: 'Feature Importance for Lung Cancer Prediction',
+      type: 'bar' as const,
+      data: [
+        {
+          y: ['Smoking', 'Age', 'Chronic Disease', 'Genetic Risk', 'Passive Smoker', 'Chest Pain', 'Coughing Blood', 'Fatigue'],
+          x: [0.28, 0.20, 0.15, 0.12, 0.10, 0.08, 0.05, 0.02],
+          type: 'bar',
+          orientation: 'h',
+          marker: {
+            color: 'rgba(55, 128, 191, 0.7)',
+            line: {
+              color: 'rgba(55, 128, 191, 1.0)',
+              width: 1
+            }
+          }
+        }
+      ],
+      layout: {
+        title: 'Feature Importance',
+        xaxis: { title: 'Importance Score' },
+        yaxis: { title: 'Feature' },
+        margin: { l: 150, r: 40, t: 50, b: 50 }
+      },
+      description: 'Relative importance of different features in predicting lung cancer, with smoking and age being the most significant predictors.'
+    },
+    {
+      title: 'Symptom Correlation Matrix',
+      type: 'heatmap' as const,
+      data: [
+        {
+          z: [
+            [1.0, 0.7, 0.6, 0.5, 0.4, 0.3],
+            [0.7, 1.0, 0.5, 0.4, 0.3, 0.2],
+            [0.6, 0.5, 1.0, 0.6, 0.5, 0.4],
+            [0.5, 0.4, 0.6, 1.0, 0.6, 0.5],
+            [0.4, 0.3, 0.5, 0.6, 1.0, 0.7],
+            [0.3, 0.2, 0.4, 0.5, 0.7, 1.0]
+          ],
+          x: ['Cough', 'Shortness of Breath', 'Chest Pain', 'Fatigue', 'Weight Loss', 'Coughing Blood'],
+          y: ['Cough', 'Shortness of Breath', 'Chest Pain', 'Fatigue', 'Weight Loss', 'Coughing Blood'],
+          type: 'heatmap',
+          colorscale: 'Viridis'
+        }
+      ],
+      layout: {
+        title: 'Symptom Correlation Matrix',
+        annotations: []
+      },
+      description: 'Correlation matrix showing relationships between different lung cancer symptoms, helping identify symptom clusters.'
+    }
+  ];
+
+  // Content for the model tab
+  const ModelContent = (
+    <div className="min-h-screen">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -363,6 +487,52 @@ export default function LungCancerPage() {
           )}
         </AnimatePresence>
       </motion.div>
+    </div>
+  );
+
+  // Content for the notebook tab
+  const NotebookContent = (
+    <div className="min-h-screen mx-auto max-w-7xl">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="container mx-auto px-4 py-8"
+      >
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Lung Cancer Analysis</h1>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            Data visualizations and model development for lung cancer prediction
+          </p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10 h-[calc(100vh-120px)] min-h-[1230px] overflow-hidden">
+          <NotebookViewer 
+            notebookPath="/api/notebooks/lung_cancer_analysis.ipynb" 
+            visualizations={lungVisualizations}
+          />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+
+  // Define tabs for the TabView component
+  const tabs = [
+    {
+      id: 'model',
+      label: 'Prediction Model',
+      content: ModelContent
+    },
+    {
+      id: 'notebook',
+      label: 'Analysis Notebook',
+      content: NotebookContent
+    }
+  ];
+
+  return (
+    <div className="min-h-screen">
+      <TabView tabs={tabs} />
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default function ChronicKidneyPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/predict/kidney', {
+      const response = await fetch('http://localhost:8001/predict/kidney', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +218,7 @@ export default function ChronicKidneyPage() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-2xl font-bold text-white">
                           {typeof prediction.probability === 'number' && !isNaN(prediction.probability) 
-                            ? `${Math.round(prediction.probability * 100)}%`
+                            ? `${(prediction.probability * 100).toFixed(2)}%`
                             : '0%'}
                         </span>
                       </div>

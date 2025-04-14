@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@types/plotly.js": "^2.35.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.2",
     "lucide-react": "^0.475.0",
     "next": "15.1.6",
+    "plotly.js": "^3.0.1",
     "react": "^19.0.0",
     "react-circular-progressbar": "^2.1.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.4.0",
+    "react-plotly.js": "^2.6.0",
     "react-select": "^5.10.0",
     "tailwind-merge": "^3.0.1"
   },

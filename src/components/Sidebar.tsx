@@ -38,25 +38,31 @@ const navItems = [
     name: 'Lung Cancer',
     path: '/lung',
     icon: '🫀',
-    image: '/images/h.png'
-  },
-  {
-    name: 'Chronic Kidney',
-    path: '/kidney',
-    icon: '🦠',
-    image: '/images/h.png'
-  },
-  {
-    name: 'Parkinsons Disease',
-    path: '/parkinsons',
-    icon: '🧠',
-    image: '/images/p1.jpg'
+    image: '/images/lung.jpg'
   },
   {
     name: 'Breast Cancer',
     path: '/breast',
-    icon: '🎗️',
-    image: '/images/breast.webp'
+    icon: '🧬',
+    image: '/images/breast.jpg'
+  },
+  {
+    name: 'Parkinson\'s Disease',
+    path: '/parkinsons',
+    icon: '🧠',
+    image: '/images/parkinsons.jpg'
+  },
+  {
+    name: 'Kidney Disease',
+    path: '/kidney',
+    icon: '🦠',
+    image: '/images/kidney.jpg'
+  },
+  {
+    name: 'Documentation',
+    path: '/docs',
+    icon: '📚',
+    image: '/images/docs.jpg'
   }
 ];
 
@@ -90,7 +96,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="text-2xl font-bold text-white"
               >
-                Models 👇
+                Hygieia ~ AI 👇
               </motion.h1>
             )}
           </AnimatePresence>

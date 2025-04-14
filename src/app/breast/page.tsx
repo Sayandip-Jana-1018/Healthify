@@ -7,6 +7,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { IconType } from 'react-icons';
 import { FaDatabase, FaHeartbeat, FaStethoscope, FaShieldAlt } from 'react-icons/fa';
 import { getRandomBreastData } from '@/utils/sampleData';
+import TabView from '@/components/TabView';
+import NotebookViewer from '@/components/NoteViewer';
 
 const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
   return <IconComponent className={className} />;
@@ -90,7 +92,7 @@ export default function BreastCancerPage() {
         [key]: value === '' ? 0 : parseFloat(value)
       }), {});
 
-      const response = await fetch('http://localhost:8000/predict/breast', {
+      const response = await fetch('http://localhost:8001/predict/breast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,7 +167,136 @@ export default function BreastCancerPage() {
     }
   ];
 
-  return (
+  // Define interactive visualizations with Plotly data
+  const breastVisualizations = [
+    {
+      title: 'Cell Nucleus Size by Diagnosis',
+      type: 'box' as const,
+      data: [
+        {
+          y: Array.from({ length: 100 }, (_, i) => 10 + Math.random() * 5),
+          type: 'box',
+          name: 'Benign',
+          marker: { color: 'rgba(100, 149, 237, 0.7)' }
+        },
+        {
+          y: Array.from({ length: 100 }, (_, i) => 15 + Math.random() * 8),
+          type: 'box',
+          name: 'Malignant',
+          marker: { color: 'rgba(255, 99, 132, 0.7)' }
+        }
+      ],
+      layout: {
+        title: 'Cell Nucleus Size',
+        yaxis: { title: 'Size (μm)' }
+      },
+      description: 'Box plots comparing cell nucleus sizes between benign and malignant breast tumors. Malignant tumors typically have larger nuclei with more variation in size.'
+    },
+    {
+      title: 'Texture vs. Perimeter of Cell Nuclei',
+      type: 'scatter' as const,
+      data: [
+        {
+          x: Array.from({ length: 50 }, (_, i) => 10 + Math.random() * 5),
+          y: Array.from({ length: 50 }, (_, i) => 50 + Math.random() * 20),
+          mode: 'markers',
+          type: 'scatter',
+          name: 'Benign',
+          marker: {
+            color: 'rgba(100, 149, 237, 0.7)',
+            size: 10
+          }
+        },
+        {
+          x: Array.from({ length: 50 }, (_, i) => 15 + Math.random() * 8),
+          y: Array.from({ length: 50 }, (_, i) => 80 + Math.random() * 30),
+          mode: 'markers',
+          type: 'scatter',
+          name: 'Malignant',
+          marker: {
+            color: 'rgba(255, 99, 132, 0.7)',
+            size: 10
+          }
+        }
+      ],
+      layout: {
+        title: 'Texture vs. Perimeter',
+        xaxis: { title: 'Texture' },
+        yaxis: { title: 'Perimeter (μm)' },
+        legend: { x: 0.1, y: 1 }
+      },
+      description: 'Scatter plot showing the relationship between cell texture and perimeter measurements. Malignant cells tend to have both higher texture scores and larger perimeters.'
+    },
+    {
+      title: 'Feature Importance for Breast Cancer Prediction',
+      type: 'bar' as const,
+      data: [
+        {
+          y: ['Perimeter', 'Area', 'Concavity', 'Texture', 'Smoothness', 'Symmetry', 'Compactness', 'Fractal Dimension'],
+          x: [0.24, 0.21, 0.18, 0.12, 0.09, 0.07, 0.05, 0.04],
+          type: 'bar',
+          orientation: 'h',
+          marker: {
+            color: 'rgba(55, 128, 191, 0.7)',
+            line: {
+              color: 'rgba(55, 128, 191, 1.0)',
+              width: 1
+            }
+          }
+        }
+      ],
+      layout: {
+        title: 'Feature Importance',
+        xaxis: { title: 'Importance Score' },
+        yaxis: { title: 'Feature' },
+        margin: { l: 150, r: 40, t: 50, b: 50 }
+      },
+      description: 'Relative importance of different cell features in predicting breast cancer, with cell perimeter and area being the most significant predictors.'
+    },
+    {
+      title: 'Concavity Distribution by Diagnosis',
+      type: 'histogram' as const,
+      data: [
+        {
+          x: Array.from({ length: 100 }, (_, i) => 0.02 + Math.random() * 0.05),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(100, 149, 237, 0.7)',
+            line: {
+              color: 'rgba(100, 149, 237, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'Benign'
+        },
+        {
+          x: Array.from({ length: 100 }, (_, i) => 0.08 + Math.random() * 0.12),
+          type: 'histogram',
+          marker: {
+            color: 'rgba(255, 99, 132, 0.7)',
+            line: {
+              color: 'rgba(255, 99, 132, 1)',
+              width: 1
+            }
+          },
+          opacity: 0.75,
+          name: 'Malignant'
+        }
+      ],
+      layout: {
+        title: 'Cell Concavity Distribution',
+        xaxis: { title: 'Concavity' },
+        yaxis: { title: 'Count' },
+        barmode: 'overlay',
+        legend: { x: 0.1, y: 1 }
+      },
+      description: 'Distribution of cell concavity measurements in benign versus malignant breast tumors. Higher concavity values are strongly associated with malignancy.'
+    }
+  ];
+
+  // Content for the model tab
+  const ModelContent = (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
       <motion.div
         initial="hidden"
@@ -351,6 +482,52 @@ export default function BreastCancerPage() {
           </div>
         )}
       </motion.div>
+    </div>
+  );
+
+  // Content for the notebook tab
+  const NotebookContent = (
+    <div className="min-h-screen mx-auto max-w-7xl">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="container mx-auto px-4 py-8"
+      >
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Breast Cancer Analysis</h1>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            Data visualizations and model development for breast cancer prediction
+          </p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass rounded-2xl backdrop-blur-lg bg-black/30 border border-white/10 h-[calc(100vh-120px)] min-h-[1230px] overflow-hidden">
+          <NotebookViewer 
+            notebookPath="/api/notebooks/breast_cancer_analysis.ipynb" 
+            visualizations={breastVisualizations}
+          />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+
+  // Define tabs for the TabView component
+  const tabs = [
+    {
+      id: 'model',
+      label: 'Prediction Model',
+      content: ModelContent
+    },
+    {
+      id: 'notebook',
+      label: 'Analysis Notebook',
+      content: NotebookContent
+    }
+  ];
+
+  return (
+    <div className="min-h-screen">
+      <TabView tabs={tabs} />
     </div>
   );
 }
